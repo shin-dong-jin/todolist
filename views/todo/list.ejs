@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="#">
+    <title>My ToDo App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+
+    <!-- AXIOS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        function addItem() {
+            let list = document.getElementById('todolist');     // ul 요소 가져옴
+            let todo = document.getElementById('item');       // 입력값을 읽어옴.            
+            let listitem = document.createElement('li');         // 새로운 li 요소를 생성
+            let checkboxInput = document.createElement('input');
+            let listiteminput = document.createElement('input');
+            let xbtn = document.createElement('button');      // li 요소에 들어갈 닫기 버튼 생성
+
+            listitem.className = 'd-flex list-group-item list-group-item-action list-group-item-warning';
+
+            xbtn.className = 'btn-close  ms-auto';
+
+            // close 버튼에 이벤트 처리
+            xbtn.onclick = (e) => {
+                closeClickHandler(e);
+            }
+            // li 요소 구성
+            checkboxInput.type = 'checkbox';
+            checkboxInput.onclick = (e) => {
+                checkboxHandler(e);
+            }
+            listiteminput.value = todo.value;
+            listiteminput.onchange = (e) => {
+                modifyChangeHandler(e);
+            };
+            listiteminput.style = 'border: none; background-color: transparent;';
+            listitem.appendChild(checkboxInput);
+            listitem.appendChild(listiteminput);
+            listitem.appendChild(xbtn);
+            list.appendChild(listitem);           // ul 요소에 li 요소 추가
+
+            let idx = parseInt(listitem.previousElementSibling.id) + 1;
+            listitem.id = idx;
+
+            axios.post('/todo/list', { no: idx, title: todo.value })
+                .then(response => {
+                    console.log(response);
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+
+            // 입력칸 비우기 및 포커스 이동
+            todo.value = '';
+            todo.focus();
+        }
+
+        const closeClickHandler = (e) => {
+            let pnode = e.target.parentNode;
+            let list = pnode.parentNode;
+            list.removeChild(pnode);
+            axios.delete('/todo/list', { data: { no: pnode.id } })
+                    .then(response => {
+                        console.log(response);
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    })
+        }
+
+        const modifyChangeHandler = (e) => {
+            let pnode = e.target.parentNode;
+            let value = e.target.value;
+            axios.put('/todo/list/title', {no: pnode.id, title: value})
+                .then(response => {
+                    console.log(response);
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+        }
+
+        const checkboxHandler = (e) => {
+            let pnode = e.target.parentNode;
+            let next = e.target.nextElementSibling;
+            let check = e.target.checked;
+            axios.put('/todo/list/done', {no: pnode.id, done: check})
+                .then(response => {
+                    next.style.textDecorationLine = check ? 'line-through' : 'none';
+                    e.target.checked = check;
+                    console.log(response);
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+        }
+    </script>
+    <title>My ToDo App</title>
+</head>
+
+<body>
+    <div class="container bg-warning shadow mx-auto mt-5 p-5 w-75">
+        <h2>My ToDo App</h2>
+        <hr>
+        <div class="input-group">
+            <input id="item" class="form-control" type="text" placeholder="할일을 입력하세요..">
+            <button type="button" class="btn btn-primary" onclick="addItem()">할일 추가</button>
+        </div>
+        <hr>
+        <ul id="todolist" class="list-group">
+            <% todoList.forEach((item) => { %>
+                <li class='d-flex list-group-item list-group-item-action list-group-item-warning' id=<%= item.no %> >
+                    <input type="checkbox" onclick="checkboxHandler(event)" <%= item.done ? 'checked' : '' %> >
+                    <input type="text"
+                        value="<%= item.title %>"
+                        onchange="modifyChangeHandler(event)"
+                        style="border: none; background-color: transparent; text-decoration: <%= item.done ? 'line-through' : 'none' %>" />
+                    <button type="button"
+                        class="btn-close  ms-auto"
+                        onclick="closeClickHandler(event)" />
+                </li>
+            <% }); %>
+        </ul>
+    </div>
+</body>
+
+</html>
